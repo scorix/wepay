@@ -13,7 +13,6 @@ module Wepay
 
   private
   def self.preprocess_params(params, nonce_str)
-    params.merge!(appid: Wepay.config.appid, mch_id: Wepay.config.mch_id)
     params.delete(:key)
     params[:nonce_str] ||= nonce_str
     params
