@@ -4,6 +4,6 @@ module Wepay
     base_uri 'https://api.mch.weixin.qq.com'
     disable_rails_query_string_format
     default_timeout 10
-    format :json
+    format :xml
   end
 end

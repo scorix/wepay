@@ -16,7 +16,7 @@ module Wepay
       params[:time_start] ||= Time.now.strftime('%Y%m%d%H%M%S')
       params[:trade_type] ||= 'APP'
 
-      API.post('/pay/unifiedorder', body: params_with_sign(params)).parsed_response
+      API.post('/pay/unifiedorder', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 该接口提供所有微信支付订单的查询，商户可以通过该接口主动查询订单状态，完成下一步的业务逻辑。
@@ -29,7 +29,7 @@ module Wepay
     def orderquery(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/orderquery', body: params_with_sign(params)).parsed_response
+      API.post('/pay/orderquery', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 以下情况需要调用关单接口：
@@ -40,7 +40,7 @@ module Wepay
     def closeorder(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/closeorder', body: params_with_sign(params)).parsed_response
+      API.post('/pay/closeorder', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 当交易发生之后一段时间内，由于买家或者卖家的原因需要退款时，卖家可以通过退款接口将支付款退还给买家，
@@ -59,7 +59,7 @@ module Wepay
       params[:refund_fee_type] ||= 'CNY'
       params[:op_user_id] ||= Wepay.config.mch_id
 
-      API.post('/secapi/pay/refund', body: params_with_sign(params)).parsed_response
+      API.post('/secapi/pay/refund', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 提交退款申请后，通过调用该接口查询退款状态。
@@ -68,7 +68,7 @@ module Wepay
     def refundquery(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/refundquery', body: params_with_sign(params)).parsed_response
+      API.post('/pay/refundquery', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 商户可以通过该接口下载历史交易清单。
@@ -81,7 +81,7 @@ module Wepay
     def downloadbill(bill_date, more_params = {})
       params = more_params.merge(bill_date: bill_date)
 
-      API.post('/pay/downloadbill', body: params_with_sign(params)).parsed_response
+      API.post('/pay/downloadbill', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     # 商户在调用微信支付提供的相关接口时，会得到微信支付返回的相关信息以及获得整个接口的响应时间。
@@ -94,15 +94,26 @@ module Wepay
                                  result_code: result_code,
                                  user_ip: user_ip)
 
-      API.post('payitil/report', body: params_with_sign(params)).parsed_response
+      API.post('payitil/report', body: to_xml(params_with_sign(params))).parsed_response
     end
 
     private
     def params_with_sign(params)
-      params[:nonce_str] ||= SecureRandom.urlsafe_base64(32).tr('-_', '')
+      params = params.merge(appid: Wepay.config.appid, mch_id: Wepay.config.mch_id)
+      params.delete(:key)
+      params[:nonce_str] ||= SecureRandom.urlsafe_base64.tr('-_', '')
       str = params.sort.map { |x| x.join('=') }.join('&')
-      str_with_key = "#{str}&key=#{Wepay.config.app_secret}"
+      str_with_key = "#{str}&key=#{Wepay.config.api_key}"
       params[:sign] = Digest::MD5.hexdigest(str_with_key).upcase
+      params
+    end
+
+    def to_xml(params)
+      xml = '<xml>'
+      ((params.keys - [:sign]).sort | [:sign]).each do |k|
+        xml << "<#{k}>#{params[k]}</#{k}>"
+      end
+      xml << '</xml>'
     end
   end
 end
