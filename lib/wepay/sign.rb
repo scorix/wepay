@@ -6,7 +6,8 @@ module Wepay
   end
 
   def self.params_with_sign(params, nonce_str = SecureRandom.urlsafe_base64.tr('-_', ''))
-    params.dup.merge(sign: Wepay.sign(params, nonce_str))
+    params_dup = preprocess_params(params, nonce_str)
+    params_dup.merge('sign' => Wepay.sign(params, nonce_str))
   end
 
   private
