@@ -5,5 +5,6 @@ module Wepay
     disable_rails_query_string_format
     default_timeout 10
     format :xml
+    headers 'Content-Type' => 'application/xml'
   end
 end
