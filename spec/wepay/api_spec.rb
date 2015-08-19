@@ -13,7 +13,7 @@ describe Wepay::API do
       expect(Wepay.config.appid).to eql 'abc'
       res = Wepay::API.post '/pay/unifiedorder'
 
-      expect(res.parsed_response['return_code']).to eql 'SUCCESS'
+      expect(res.parsed_response['xml']['return_code']).to eql 'SUCCESS'
     end
   end
 end
