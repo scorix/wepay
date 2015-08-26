@@ -14,9 +14,16 @@ module Wepay
   def self.preprocess_params(params, nonce_str)
     params_dup = params.dup
     stringified_keys_params = {}
-    params_dup.each { |k, v| stringified_keys_params[k.to_s] = v }
+    params_dup.each do |k, v|
+      next if blank?(v)
+      stringified_keys_params[k.to_s] = v
+    end
     stringified_keys_params.delete('key')
     stringified_keys_params['nonce_str'] ||= nonce_str
     stringified_keys_params
+  end
+
+  def blank?(v)
+    !v || v.nil? || (v.respond_to?(:empty?) && v.empty?)
   end
 end
