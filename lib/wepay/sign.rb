@@ -23,7 +23,7 @@ module Wepay
     stringified_keys_params
   end
 
-  def blank?(v)
+  def self.blank?(v)
     !v || v.nil? || (v.respond_to?(:empty?) && v.empty?)
   end
 end
