@@ -19,7 +19,7 @@ module Wepay
       stringified_keys_params[k.to_s] = v
     end
     stringified_keys_params.delete('key')
-    stringified_keys_params['nonce_str'] ||= nonce_str
+    stringified_keys_params['nonce_str'] ||= (stringified_keys_params['noncestr'] || nonce_str)
     stringified_keys_params
   end
 
