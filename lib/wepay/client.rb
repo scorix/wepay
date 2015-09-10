@@ -104,8 +104,8 @@ module Wepay
 
     def to_xml(params)
       xml = '<xml>'
-      ((params.keys - [:sign]).sort | [:sign]).each do |k|
-        xml << "<#{k}>#{params[k]}</#{k}>"
+      ((params.keys - ['sign', :sign]).sort | ['sign', :sign]).each do |k|
+        xml << "<#{k}>#{params[k]}</#{k}>" if params[k]
       end
       xml << '</xml>'
     end
