@@ -81,7 +81,8 @@ module Wepay
     def downloadbill(bill_date, more_params = {})
       params = more_params.merge(bill_date: bill_date)
 
-      API.post('/pay/downloadbill', body: request_params(params)).parsed_response
+      # csv data
+      HTTParty.post("#{API.base_uri}/pay/downloadbill", body: request_params(params)).body
     end
 
     # 商户在调用微信支付提供的相关接口时，会得到微信支付返回的相关信息以及获得整个接口的响应时间。
