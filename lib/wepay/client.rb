@@ -3,6 +3,69 @@
 module Wepay
   class Client
 
+    def initialize(options = {})
+      @config = Config.new
+      @config.appid = options[:appid]
+      @config.mch_id = options[:mch_id]
+      @config.app_secret = options[:app_secret]
+      @config.api_key = options[:api_key]
+      @config.cert_type = options[:cert_type]
+      @config.cert_file = options[:cert_file]
+      @config.cert_password = options[:cert_password]
+      @config.adapter = options[:adapter] || :patron
+    end
+
+    def config
+      @config.dup
+    end
+
+    def api
+      @api ||= case config.adapter
+                 when :httparty
+                   require 'httparty'
+                   c = Class.new do
+                     include ::HTTParty
+                     base_uri 'https://api.mch.weixin.qq.com'
+                     disable_rails_query_string_format
+                     default_timeout 10
+                     headers 'Content-Type' => 'application/xml'
+
+                     def self.post(url, body, format:)
+                       super(url, body: body, format: format).parsed_response
+                     end
+                   end
+
+                   c.default_options.delete(:p12)
+                   c.default_options.delete(:p12_password)
+                   c.default_options.delete(:pem)
+                   c.default_options.delete(:pem_password)
+
+                   # set cert option
+                   if @config.cert_type && @config.cert_file && File.exist?(@config.cert_file)
+                     c..public_send(@config.cert_type.to_sym, File.read(@config.cert_file), @config.cert_password)
+                   end
+                   c
+                 when :patron
+                   require 'patron'
+                   Class.new do
+                     def self.post(url, body, format:)
+                       s = Patron::Session.new(base_url: 'https://api.mch.weixin.qq.com',
+                                               timeout: 10,
+                                               headers: {'Content-Type' => 'application/xml'},
+                                               force_ipv4: true)
+                       body = s.post(url, body).body
+                       case format
+                         when :xml
+                           MultiXml.parse(body)
+                         when :csv
+                           require 'csv'
+                           CSV.parse(body)
+                       end
+                     end
+                   end
+               end
+    end
+
     # 除被扫支付场景以外，商户系统先调用该接口在微信支付服务后台生成预支付交易单，
     # 返回正确的预支付交易回话标识后再按扫码、JSAPI、APP等不同场景生成交易串调起支付。
     def unifiedorder(body, out_trade_no, total_fee, spbill_create_ip, notify_url, more_params = {})
@@ -16,7 +79,7 @@ module Wepay
       params[:time_start] ||= Time.now.strftime('%Y%m%d%H%M%S')
       params[:trade_type] ||= 'APP'
 
-      API.post('/pay/unifiedorder', body: request_params(params)).parsed_response
+      api.post('/pay/unifiedorder', request_params(params), format: :xml)
     end
 
     # 该接口提供所有微信支付订单的查询，商户可以通过该接口主动查询订单状态，完成下一步的业务逻辑。
@@ -29,7 +92,7 @@ module Wepay
     def orderquery(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/orderquery', body: request_params(params)).parsed_response
+      api.post('/pay/orderquery', request_params(params), format: :xml)
     end
 
     # 以下情况需要调用关单接口：
@@ -40,7 +103,7 @@ module Wepay
     def closeorder(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/closeorder', body: request_params(params)).parsed_response
+      api.post('/pay/closeorder', request_params(params), format: :xml)
     end
 
     # 当交易发生之后一段时间内，由于买家或者卖家的原因需要退款时，卖家可以通过退款接口将支付款退还给买家，
@@ -59,7 +122,7 @@ module Wepay
       params[:refund_fee_type] ||= 'CNY'
       params[:op_user_id] ||= Wepay.config.mch_id
 
-      API.post('/secapi/pay/refund', body: request_params(params)).parsed_response
+      api.post('/secapi/pay/refund', request_params(params), format: :xml)
     end
 
     # 提交退款申请后，通过调用该接口查询退款状态。
@@ -68,7 +131,7 @@ module Wepay
     def refundquery(out_trade_no, more_params = {})
       params = more_params.merge(out_trade_no: out_trade_no)
 
-      API.post('/pay/refundquery', body: request_params(params)).parsed_response
+      api.post('/pay/refundquery', request_params(params), format: :xml)
     end
 
     # 商户可以通过该接口下载历史交易清单。
@@ -79,10 +142,10 @@ module Wepay
     #   2. 微信在次日9点启动生成前一天的对账单，建议商户10点后再获取；
     #   3. 对账单中涉及金额的字段单位为“元”。
     def downloadbill(bill_date, more_params = {})
-      params = more_params.merge(bill_date: bill_date)
+      params = more_params.merge(bill_date: Time.parse(bill_date.to_s).strftime('%Y%m%d'))
 
       # csv data
-      HTTParty.post("#{API.base_uri}/pay/downloadbill", body: request_params(params)).body
+      api.post("/pay/downloadbill", request_params(params), format: :csv)
     end
 
     # 商户在调用微信支付提供的相关接口时，会得到微信支付返回的相关信息以及获得整个接口的响应时间。
@@ -95,12 +158,12 @@ module Wepay
                                  result_code: result_code,
                                  user_ip: user_ip)
 
-      API.post('payitil/report', body: request_params(params)).parsed_response
+      api.post('payitil/report', request_params(params), format: :xml)
     end
 
     private
     def request_params(params)
-      to_xml(Wepay.params_with_sign(params.merge(appid: Wepay.config.appid, mch_id: Wepay.config.mch_id)))
+      to_xml(Wepay.params_with_sign(params, @config))
     end
 
     def to_xml(params)
