@@ -24,7 +24,13 @@ Gem::Specification.new do |spec|
   spec.add_development_dependency 'pry'
   spec.add_development_dependency 'webmock'
   spec.add_development_dependency 'rspec'
+  spec.add_development_dependency 'rspec-its'
+  spec.add_development_dependency 'simplecov'
+  spec.add_development_dependency 'net-dns'
   spec.add_development_dependency 'sinatra'
 
-  spec.add_dependency 'httparty'
+  spec.add_development_dependency 'httparty'
+  spec.add_development_dependency 'patron'
+
+  spec.add_dependency 'multi_xml'
 end
