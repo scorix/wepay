@@ -1,10 +1,10 @@
 module Wepay
   class << self
     def sign(params, config, nonce_str = random_string)
-      Digest::MD5.hexdigest(string_params_with_sign(params, config, nonce_str)).upcase
+      Digest::MD5.hexdigest(string_params_without_sign(params, config, nonce_str)).upcase
     end
 
-    def string_params_with_sign(params, config, nonce_str = random_string)
+    def string_params_without_sign(params, config, nonce_str = random_string)
       sorted_params = preprocess_params(params, config, nonce_str).sort_by { |k, _| k }
       (sorted_params << ['key', config.api_key]).map { |x| x.join('=') }.join('&')
     end
