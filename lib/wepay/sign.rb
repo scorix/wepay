@@ -5,12 +5,12 @@ module Wepay
     end
 
     def string_params_without_sign(params, config, nonce_str = random_string)
-      sorted_params = preprocess_params(params, config, nonce_str).sort_by { |k, _| k }
+      sorted_params = preprocess_params(params, nonce_str).sort_by { |k, _| k }
       (sorted_params << ['key', config.api_key]).map { |x| x.join('=') }.join('&')
     end
 
     def params_with_sign(params, config, nonce_str = random_string)
-      params_dup = preprocess_params(params, config, nonce_str)
+      params_dup = preprocess_params(params, nonce_str)
       params_dup.merge('sign' => Wepay.sign(params, config, nonce_str))
     end
 
@@ -19,8 +19,7 @@ module Wepay
       SecureRandom.urlsafe_base64.tr('-_', '')
     end
 
-    def preprocess_params(params, config, nonce_str)
-      params = params.merge(appid: config.appid, mch_id: config.mch_id)
+    def preprocess_params(params, nonce_str)
       params_dup = params.dup
       stringified_keys_params = {}
       params_dup.each do |k, v|
