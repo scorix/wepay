@@ -163,6 +163,7 @@ module Wepay
 
     private
     def request_params(params)
+      params.merge!(appid: @config.appid, mch_id: @config.mch_id)
       to_xml(Wepay.params_with_sign(params, @config))
     end
 
