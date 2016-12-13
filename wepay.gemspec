@@ -7,11 +7,11 @@ Gem::Specification.new do |spec|
   spec.name          = 'wepay'
   spec.version       = Wepay::VERSION
   spec.authors       = ['scorix']
-  spec.email         = ['scorix@liulishuo.com']
+  spec.email         = ['scorix@gmail.com']
 
   spec.summary       = %q{A gem for payment in wechat.}
   spec.description   = %q{api doc: https://pay.weixin.qq.com/wiki/doc/api/app.php?chapter=9_1}
-  spec.homepage      = 'https://github.com/lingochamp/wepay'
+  spec.homepage      = 'https://github.com/scorix/wepay'
   spec.license       = 'MIT'
 
   spec.files         = `git ls-files -z`.split("\x0").reject { |f| f.match(%r{^(test|spec|features)/}) }
