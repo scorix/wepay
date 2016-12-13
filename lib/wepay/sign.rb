@@ -9,9 +9,9 @@ module Wepay
       (sorted_params << ['key', config.api_key]).map { |x| x.join('=') }.join('&')
     end
 
-    def params_with_sign(params, config, nonce_str = random_string)
+    def params_with_sign(params, config, nonce_str = random_string, sign_key: "sign")
       params_dup = preprocess_params(params, nonce_str)
-      params_dup.merge('sign' => Wepay.sign(params, config, nonce_str))
+      params_dup.merge(sign_key => Wepay.sign(params, config, nonce_str))
     end
 
     private
