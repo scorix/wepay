@@ -42,7 +42,7 @@ module Wepay
 
                    # set cert option
                    if @config.cert_type && @config.cert_file && File.exist?(@config.cert_file)
-                     c..public_send(@config.cert_type.to_sym, File.read(@config.cert_file), @config.cert_password)
+                     c.public_send(@config.cert_type.to_sym, File.read(@config.cert_file), @config.cert_password)
                    end
                    c
                  when :patron
